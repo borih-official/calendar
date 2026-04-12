@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<!-- saved from url=(0051)file:///C:/Users/dream/Downloads/borih-gantt_2.html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>보리(BOHRI) 프로젝트 관리 차트 2026</title>
+<link href="./index_files/css2" rel="stylesheet">
+<style>
+:root {
+  --sage-deep:  #5d7a5a;
+  --sage:       #8fa68a;
+  --sage-light: #bccdb7;
+  --teal:       #7a9e9a;
+  --cream:      #f5f1eb;
+  --warm-white: #faf8f4;
+  --stone:      #d4cfc6;
+  --bark:       #8c7b6b;
+  --text-dark:  #2c2b28;
+  --text-mid:   #5a5750;
+  --text-light: #9a9590;
+
+  --s-완료:   #5d7a5a;
+  --s-진행중: #c4a882;
+  --s-대기:   #9a9590;
+  --s-긴급:   #b85c4a;
+  --s-검토:   #7a9e9a;
+
+  --g-완료:   #bccdb7;
+  --g-진행중: #e8d5b7;
+  --g-대기:   #e8e3dc;
+  --g-긴급:   #f0c4bb;
+  --g-검토:   #c8d8d6;
+
+  --w-no:     34px;
+  --w-item:   155px;
+  --w-owner:  54px;
+  --w-status: 58px;
+  --w-week:   28px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Poppins', sans-serif; background: var(--warm-white); color: var(--text-dark); font-weight: 300; font-size: 12px; }
+
+.title-bar { background: var(--text-dark); color: white; padding: 12px 22px; display: flex; align-items: baseline; gap: 14px; }
+.title-bar .brand { font-size: 12px; font-weight: 500; letter-spacing: 0.22em; color: var(--sage-light); }
+.title-bar .chart-title { font-family: 'Noto Serif KR', serif; font-size: 13px; font-weight: 300; letter-spacing: 0.08em; }
+.title-bar .year { font-size: 12px; color: var(--stone); letter-spacing: 0.1em; }
+
+.toolbar { background: var(--cream); border-bottom: 1px solid var(--stone); padding: 9px 22px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.toolbar-label { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-light); }
+.swatch { width: 21px; height: 21px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.14s; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+.swatch:hover { transform: scale(1.18); }
+.swatch.active { border-color: var(--text-dark); box-shadow: 0 0 0 2px var(--cream), 0 0 0 4px var(--text-dark); }
+.swatch[data-g="완료"]   { background: var(--g-완료); }
+.swatch[data-g="진행중"] { background: var(--g-진행중); }
+.swatch[data-g="대기"]   { background: var(--g-대기); }
+.swatch[data-g="긴급"]   { background: var(--g-긴급); }
+.swatch[data-g="검토"]   { background: var(--g-검토); }
+.swatch[data-g="clear"]  { background: white; border-color: var(--stone); color: var(--text-light); }
+.vd { width: 1px; height: 18px; background: var(--stone); margin: 0 3px; }
+.btn { padding: 5px 12px; border-radius: 3px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.1em; cursor: pointer; border: none; transition: all 0.14s; }
+.btn-p { background: var(--sage-deep); color: white; }
+.btn-p:hover { background: #4a6347; }
+.btn-s { background: transparent; color: var(--sage-deep); border: 1px solid var(--sage); }
+.btn-s:hover { background: var(--sage-light); }
+
+.legend { display: flex; gap: 14px; align-items: center; padding: 7px 22px; background: white; border-bottom: 2px solid var(--stone); flex-wrap: wrap; }
+.li { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text-light); }
+.ld { width: 10px; height: 10px; border-radius: 2px; }
+.hint { font-size: 9px; color: var(--text-light); margin-left: 6px; }
+
+.wrap { overflow: auto; max-height: calc(100vh - 138px); }
+.wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+.wrap::-webkit-scrollbar-track { background: var(--cream); }
+.wrap::-webkit-scrollbar-thumb { background: var(--stone); border-radius: 3px; }
+
+table { border-collapse: collapse; table-layout: fixed; }
+
+/* ══ STICKY LEFT COLUMNS ══
+   Each column has a class c-no / c-item / c-owner / c-status
+   with explicit left offsets so they stack correctly. */
+
+.c-no     { width: var(--w-no);     left: 0; }
+.c-item   { width: var(--w-item);   left: var(--w-no); }
+.c-owner  { width: var(--w-owner);  left: calc(var(--w-no) + var(--w-item)); }
+.c-status {
+  width: var(--w-status);
+  left: calc(var(--w-no) + var(--w-item) + var(--w-owner));
+  /* hard divider between info panel and calendar */
+  border-right: 3px solid var(--stone) !important;
+  box-shadow: 4px 0 10px rgba(0,0,0,0.07);
+}
+
+/* ══ THEAD ══ */
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--text-dark);
+  color: white;
+  font-weight: 400; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+  white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 4px; text-align: center;
+  z-index: 6;
+}
+
+/* Sticky left TH — must be above week TH */
+thead th.c-no, thead th.c-item, thead th.c-owner, thead th.c-status {
+  position: sticky;
+  z-index: 10;
+}
+thead th.c-status {
+  border-right: 3px solid rgba(255,255,255,0.28) !important;
+  box-shadow: 4px 0 10px rgba(0,0,0,0.22);
+}
+
+/* Week sub-row */
+thead tr.week-row th {
+  top: 30px;
+  background: #3a3935;
+  font-size: 8px; letter-spacing: 0.08em; padding: 5px 2px; color: var(--stone);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 2px solid var(--stone);
+  z-index: 6;
+}
+thead tr.week-row th.c-no,
+thead tr.week-row th.c-item,
+thead tr.week-row th.c-owner,
+thead tr.week-row th.c-status { z-index: 10; }
+
+thead th.th-month {
+  background: var(--sage-deep);
+  font-size: 10px; letter-spacing: 0.18em;
+  border-right: 2px solid rgba(255,255,255,0.22) !important;
+}
+thead th.today-w { background: var(--bark) !important; color: white !important; }
+
+/* ══ TBODY ══ */
+td {
+  height: 30px;
+  border-right: 1px solid #e8e4de;
+  border-bottom: 1px solid #e8e4de;
+  vertical-align: middle; padding: 0;
+}
+td:last-child { border-right: none; }
+
+td.c-no, td.c-item, td.c-owner, td.c-status {
+  position: sticky;
+  background: white;
+  z-index: 3;
+}
+td.c-no    { text-align: center; font-size: 10px; color: var(--text-light); }
+td.c-status { text-align: center; }
+
+td.m-end { border-right: 2px solid var(--stone) !important; }
+
+/* ══ PROJECT ROW ══ */
+tr.proj-row td {
+  background: var(--sage-deep) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+  border-right: 1px solid rgba(255,255,255,0.08) !important;
+  height: 34px;
+}
+tr.proj-row td.c-no,
+tr.proj-row td.c-item,
+tr.proj-row td.c-owner,
+tr.proj-row td.c-status { background: var(--sage-deep) !important; z-index: 4; }
+tr.proj-row td.c-status {
+  border-right: 3px solid rgba(255,255,255,0.25) !important;
+  box-shadow: 4px 0 10px rgba(0,0,0,0.18);
+}
+
+.proj-inner { display: flex; align-items: center; gap: 8px; padding: 0 8px 0 10px; height: 100%; }
+.proj-num { font-size: 8px; font-weight: 500; letter-spacing: 0.2em; color: var(--sage-light); white-space: nowrap; flex-shrink: 0; }
+.proj-name-inp { font-family: 'Noto Serif KR', serif; font-size: 12px; font-weight: 300; color: white; background: transparent; border: none; outline: none; width: 100%; letter-spacing: 0.04em; }
+.proj-name-inp::placeholder { color: rgba(255,255,255,0.38); }
+.toggle-btn { background: none; border: none; cursor: pointer; color: var(--sage-light); font-size: 10px; padding: 0; flex-shrink: 0; transition: transform 0.2s; line-height: 1; }
+.toggle-btn.collapsed { transform: rotate(-90deg); }
+.del-proj-btn { background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.3); font-size: 14px; padding: 0; flex-shrink: 0; transition: color 0.14s; }
+.del-proj-btn:hover { color: white; }
+
+/* ══ SUB-HEADER ROW ══ */
+tr.sub-hdr td { background: #ede9e1 !important; font-size: 8px; letter-spacing: 0.14em; color: var(--text-mid); text-transform: uppercase; font-weight: 400; border-bottom: 1px solid var(--stone) !important; }
+tr.sub-hdr td.c-no, tr.sub-hdr td.c-item, tr.sub-hdr td.c-owner, tr.sub-hdr td.c-status { background: #ede9e1 !important; }
+tr.sub-hdr td.c-item span { padding-left: 10px; }
+
+/* ══ AGENDA ROW ══ */
+.item-wrap { display: flex; align-items: center; padding: 0 6px 0 10px; height: 100%; }
+.item-inp { font-family: 'Noto Serif KR', serif; font-size: 11px; font-weight: 300; color: var(--text-dark); background: transparent; border: none; outline: none; width: 100%; letter-spacing: 0.02em; }
+.item-inp::placeholder { color: var(--stone); }
+.owner-inp { font-family: 'Noto Serif KR', serif; font-size: 10px; font-weight: 300; color: var(--text-mid); background: transparent; border: none; outline: none; width: 100%; text-align: center; }
+.owner-inp::placeholder { color: var(--stone); }
+
+.badge { display: inline-block; padding: 2px 6px; border-radius: 2px; font-size: 9px; letter-spacing: 0.04em; cursor: pointer; user-select: none; transition: opacity 0.13s; white-space: nowrap; }
+.badge:hover { opacity: 0.78; }
+.b-완료   { background: var(--s-완료);   color: white; }
+.b-진행중 { background: var(--s-진행중); color: white; }
+.b-대기   { background: var(--s-대기);   color: white; }
+.b-긴급   { background: var(--s-긴급);   color: white; }
+.b-검토   { background: var(--s-검토);   color: white; }
+.b-empty  { background: var(--stone);    color: var(--text-light); }
+
+/* ══ GANTT CELL ══ */
+td.wk { width: var(--w-week); min-width: var(--w-week); cursor: crosshair; user-select: none; transition: filter 0.07s; }
+td.wk:hover { filter: brightness(0.86); }
+td.wk[data-g="완료"]   { background: var(--g-완료); }
+td.wk[data-g="진행중"] { background: var(--g-진행중); }
+td.wk[data-g="대기"]   { background: var(--g-대기); }
+td.wk[data-g="긴급"]   { background: var(--g-긴급); }
+td.wk[data-g="검토"]   { background: var(--g-검토); }
+td.wk.today-col { background-color: rgba(140,123,107,0.10) !important; border-left: 1.5px solid rgba(140,123,107,0.45); border-right: 1.5px solid rgba(140,123,107,0.45); }
+td.wk[data-g].today-col { filter: brightness(0.93); }
+
+tr.add-row td { background: var(--warm-white); border-bottom: 2px solid var(--stone) !important; }
+.add-btn { background: none; border: none; cursor: pointer; font-size: 10px; color: var(--text-light); letter-spacing: 0.1em; padding: 0 10px; transition: color 0.14s; }
+.add-btn:hover { color: var(--sage-deep); }
+
+tr.hidden { display: none; }
+
+/* ══ STATUS POPUP ══ */
+#status-popup { display: none; position: fixed; z-index: 200; background: white; border: 1px solid var(--stone); border-radius: 6px; box-shadow: 0 4px 20px rgba(44,43,40,0.14); padding: 5px 3px; flex-direction: column; gap: 1px; min-width: 76px; }
+#status-popup.open { display: flex; }
+.s-opt { padding: 5px 10px; cursor: pointer; font-size: 10px; border-radius: 3px; transition: background 0.1s; text-align: center; }
+.s-opt:hover { background: var(--cream); }
+
+/* ══ MODAL ══ */
+#modal-bg { display: none; position: fixed; inset: 0; background: rgba(44,43,40,0.35); z-index: 300; align-items: center; justify-content: center; }
+#modal-bg.open { display: flex; }
+.modal-box { background: white; border-radius: 8px; padding: 26px 30px; width: 320px; box-shadow: 0 8px 40px rgba(44,43,40,0.18); }
+.modal-box h3 { font-family: 'Noto Serif KR', serif; font-size: 14px; font-weight: 300; color: var(--text-dark); margin-bottom: 18px; letter-spacing: 0.05em; }
+.modal-field { margin-bottom: 12px; }
+.modal-field label { display: block; font-size: 9px; letter-spacing: 0.2em; color: var(--text-light); text-transform: uppercase; margin-bottom: 5px; }
+.modal-field input { width: 100%; padding: 7px 11px; border: 1px solid var(--stone); border-radius: 3px; font-family: 'Noto Serif KR', serif; font-size: 12px; font-weight: 300; outline: none; background: var(--warm-white); color: var(--text-dark); }
+.modal-field input:focus { border-color: var(--sage-deep); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+.m-cancel { padding: 7px 15px; background: transparent; border: 1px solid var(--stone); border-radius: 3px; font-family: 'Poppins', sans-serif; font-size: 11px; cursor: pointer; color: var(--text-mid); }
+.m-confirm { padding: 7px 15px; background: var(--sage-deep); border: none; border-radius: 3px; font-family: 'Poppins', sans-serif; font-size: 11px; cursor: pointer; color: white; }
+.m-confirm:hover { background: #4a6347; }
+</style>
+</head>
+<body>
+
+<div class="title-bar">
+  <span class="brand">BORIH</span>
+  <span class="chart-title">프로젝트 관리 차트</span>
+  <span class="year">2026</span>
+  <span id="sync-status" style="margin-left: auto; font-size: 10px; letter-spacing: 0.1em; transition: color 0.3s; color: var(--sage-deep);"></span>
+  <button onclick="loadFromSheets()" style="margin-left:12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:4px 10px;border-radius:3px;font-size:9px;letter-spacing:0.12em;cursor:pointer;font-family:&#39;Poppins&#39;,sans-serif;">↻ 새로고침</button>
+</div>
+
+<div class="toolbar">
+  <span class="toolbar-label">간트 색상</span>
+  <div class="swatch active" data-g="진행중" title="진행중"></div>
+  <div class="swatch" data-g="완료" title="완료"></div>
+  <div class="swatch" data-g="대기" title="대기"></div>
+  <div class="swatch" data-g="긴급" title="긴급"></div>
+  <div class="swatch" data-g="검토" title="검토"></div>
+  <div class="swatch" data-g="clear" title="지우기">✕</div>
+  <div class="vd"></div>
+  <button class="btn btn-p" onclick="openModal()">+ 프로젝트</button>
+  <button class="btn btn-s" onclick="addMonth()">+ 월 추가</button>
+</div>
+
+<div class="legend">
+  <div class="li"><div class="ld" style="background:var(--g-진행중)"></div>진행중</div>
+  <div class="li"><div class="ld" style="background:var(--g-완료)"></div>완료</div>
+  <div class="li"><div class="ld" style="background:var(--g-대기)"></div>대기</div>
+  <div class="li"><div class="ld" style="background:var(--g-긴급)"></div>긴급</div>
+  <div class="li"><div class="ld" style="background:var(--g-검토)"></div>검토</div>
+  <span class="hint">드래그로 색칠 · 우클릭으로 지우기 · 상태 뱃지 클릭으로 변경 · 이름 클릭으로 수정</span>
+</div>
+
+<div class="wrap">
+  <table id="tbl">
+    <thead id="tbl-head"><tr><th rowspan="2" class="c-no" style="text-align: center;">No.</th><th rowspan="2" class="c-item" style="text-align: left;">작업 항목</th><th rowspan="2" class="c-owner" style="text-align: center;">담당자</th><th rowspan="2" class="c-status" style="text-align: center;">상태</th><th colspan="5" class="th-month">2026.03</th><th colspan="4" class="th-month">2026.04</th><th colspan="5" class="th-month">2026.05</th><th colspan="4" class="th-month">2026.06</th><th colspan="4" class="th-month">2026.07</th><th colspan="5" class="th-month">2026.08</th><th colspan="4" class="th-month">2026.09</th></tr><tr class="week-row"><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th style="border-right: 2px solid rgba(255, 255, 255, 0.2);">W5</th><th>W1</th><th class="today-w">W2</th><th>W3</th><th style="border-right: 2px solid rgba(255, 255, 255, 0.2);">W4</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th style="border-right: 2px solid rgba(255, 255, 255, 0.2);">W5</th><th>W1</th><th>W2</th><th>W3</th><th style="border-right: 2px solid rgba(255, 255, 255, 0.2);">W4</th><th>W1</th><th>W2</th><th>W3</th><th style="border-right: 2px solid rgba(255, 255, 255, 0.2);">W4</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th style="border-right: 2px solid rgba(255, 255, 255, 0.2);">W5</th><th>W1</th><th>W2</th><th>W3</th><th style="border-right: 2px solid rgba(255, 255, 255, 0.2);">W4</th></tr></thead>
+    <tbody id="tbl-body"><tr class="proj-row" data-proj-id="1"><td class="c-no"><button class="toggle-btn">▾</button></td><td class="c-item"><div class="proj-inner"><span class="proj-num">PROJECT 1 │</span><input class="proj-name-inp" placeholder="프로젝트명"></div></td><td class="c-owner"><button class="del-proj-btn" title="프로젝트 삭제">×</button></td><td class="c-status"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td></tr><tr class="sub-hdr" data-pg="1"><td class="c-no">No.</td><td class="c-item"><span>작업 항목</span></td><td class="c-owner">담당자</td><td class="c-status">상태</td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td></tr><tr class="ag-row" data-pg="1"><td class="c-no">01</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-완료">완료</span></td><td class="wk" data-key="1_01_0"></td><td class="wk" data-key="1_01_1"></td><td class="wk" data-key="1_01_2"></td><td class="wk" data-key="1_01_3"></td><td class="wk m-end" data-key="1_01_4"></td><td class="wk" data-key="1_01_5"></td><td class="wk today-col" data-key="1_01_6"></td><td class="wk" data-key="1_01_7"></td><td class="wk m-end" data-key="1_01_8"></td><td class="wk" data-key="1_01_9"></td><td class="wk" data-key="1_01_10"></td><td class="wk" data-key="1_01_11"></td><td class="wk" data-key="1_01_12"></td><td class="wk m-end" data-key="1_01_13"></td><td class="wk" data-key="1_01_14"></td><td class="wk" data-key="1_01_15"></td><td class="wk" data-key="1_01_16"></td><td class="wk m-end" data-key="1_01_17"></td><td class="wk" data-key="1_01_18"></td><td class="wk" data-key="1_01_19"></td><td class="wk" data-key="1_01_20"></td><td class="wk m-end" data-key="1_01_21"></td><td class="wk" data-key="1_01_22"></td><td class="wk" data-key="1_01_23"></td><td class="wk" data-key="1_01_24"></td><td class="wk" data-key="1_01_25"></td><td class="wk m-end" data-key="1_01_26"></td><td class="wk" data-key="1_01_27"></td><td class="wk" data-key="1_01_28"></td><td class="wk" data-key="1_01_29"></td><td class="wk m-end" data-key="1_01_30"></td></tr><tr class="ag-row" data-pg="1"><td class="c-no">02</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-완료">완료</span></td><td class="wk" data-key="1_02_0"></td><td class="wk" data-key="1_02_1"></td><td class="wk" data-key="1_02_2"></td><td class="wk" data-key="1_02_3"></td><td class="wk m-end" data-key="1_02_4"></td><td class="wk" data-key="1_02_5"></td><td class="wk today-col" data-key="1_02_6"></td><td class="wk" data-key="1_02_7"></td><td class="wk m-end" data-key="1_02_8"></td><td class="wk" data-key="1_02_9"></td><td class="wk" data-key="1_02_10"></td><td class="wk" data-key="1_02_11"></td><td class="wk" data-key="1_02_12"></td><td class="wk m-end" data-key="1_02_13"></td><td class="wk" data-key="1_02_14"></td><td class="wk" data-key="1_02_15"></td><td class="wk" data-key="1_02_16"></td><td class="wk m-end" data-key="1_02_17"></td><td class="wk" data-key="1_02_18"></td><td class="wk" data-key="1_02_19"></td><td class="wk" data-key="1_02_20"></td><td class="wk m-end" data-key="1_02_21"></td><td class="wk" data-key="1_02_22"></td><td class="wk" data-key="1_02_23"></td><td class="wk" data-key="1_02_24"></td><td class="wk" data-key="1_02_25"></td><td class="wk m-end" data-key="1_02_26"></td><td class="wk" data-key="1_02_27"></td><td class="wk" data-key="1_02_28"></td><td class="wk" data-key="1_02_29"></td><td class="wk m-end" data-key="1_02_30"></td></tr><tr class="ag-row" data-pg="1"><td class="c-no">03</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-진행중">진행중</span></td><td class="wk" data-key="1_03_0"></td><td class="wk" data-key="1_03_1"></td><td class="wk" data-key="1_03_2"></td><td class="wk" data-key="1_03_3"></td><td class="wk m-end" data-key="1_03_4"></td><td class="wk" data-key="1_03_5"></td><td class="wk today-col" data-key="1_03_6"></td><td class="wk" data-key="1_03_7"></td><td class="wk m-end" data-key="1_03_8"></td><td class="wk" data-key="1_03_9"></td><td class="wk" data-key="1_03_10"></td><td class="wk" data-key="1_03_11"></td><td class="wk" data-key="1_03_12"></td><td class="wk m-end" data-key="1_03_13"></td><td class="wk" data-key="1_03_14"></td><td class="wk" data-key="1_03_15"></td><td class="wk" data-key="1_03_16"></td><td class="wk m-end" data-key="1_03_17"></td><td class="wk" data-key="1_03_18"></td><td class="wk" data-key="1_03_19"></td><td class="wk" data-key="1_03_20"></td><td class="wk m-end" data-key="1_03_21"></td><td class="wk" data-key="1_03_22"></td><td class="wk" data-key="1_03_23"></td><td class="wk" data-key="1_03_24"></td><td class="wk" data-key="1_03_25"></td><td class="wk m-end" data-key="1_03_26"></td><td class="wk" data-key="1_03_27"></td><td class="wk" data-key="1_03_28"></td><td class="wk" data-key="1_03_29"></td><td class="wk m-end" data-key="1_03_30"></td></tr><tr class="ag-row" data-pg="1"><td class="c-no">04</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-완료">완료</span></td><td class="wk" data-key="1_04_0"></td><td class="wk" data-key="1_04_1"></td><td class="wk" data-key="1_04_2"></td><td class="wk" data-key="1_04_3"></td><td class="wk m-end" data-key="1_04_4"></td><td class="wk" data-key="1_04_5"></td><td class="wk today-col" data-key="1_04_6"></td><td class="wk" data-key="1_04_7"></td><td class="wk m-end" data-key="1_04_8"></td><td class="wk" data-key="1_04_9"></td><td class="wk" data-key="1_04_10"></td><td class="wk" data-key="1_04_11"></td><td class="wk" data-key="1_04_12"></td><td class="wk m-end" data-key="1_04_13"></td><td class="wk" data-key="1_04_14"></td><td class="wk" data-key="1_04_15"></td><td class="wk" data-key="1_04_16"></td><td class="wk m-end" data-key="1_04_17"></td><td class="wk" data-key="1_04_18"></td><td class="wk" data-key="1_04_19"></td><td class="wk" data-key="1_04_20"></td><td class="wk m-end" data-key="1_04_21"></td><td class="wk" data-key="1_04_22"></td><td class="wk" data-key="1_04_23"></td><td class="wk" data-key="1_04_24"></td><td class="wk" data-key="1_04_25"></td><td class="wk m-end" data-key="1_04_26"></td><td class="wk" data-key="1_04_27"></td><td class="wk" data-key="1_04_28"></td><td class="wk" data-key="1_04_29"></td><td class="wk m-end" data-key="1_04_30"></td></tr><tr class="ag-row" data-pg="1"><td class="c-no">05</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-진행중">진행중</span></td><td class="wk" data-key="1_05_0"></td><td class="wk" data-key="1_05_1"></td><td class="wk" data-key="1_05_2"></td><td class="wk" data-key="1_05_3"></td><td class="wk m-end" data-key="1_05_4"></td><td class="wk" data-key="1_05_5"></td><td class="wk today-col" data-key="1_05_6"></td><td class="wk" data-key="1_05_7"></td><td class="wk m-end" data-key="1_05_8"></td><td class="wk" data-key="1_05_9"></td><td class="wk" data-key="1_05_10"></td><td class="wk" data-key="1_05_11"></td><td class="wk" data-key="1_05_12"></td><td class="wk m-end" data-key="1_05_13"></td><td class="wk" data-key="1_05_14"></td><td class="wk" data-key="1_05_15"></td><td class="wk" data-key="1_05_16"></td><td class="wk m-end" data-key="1_05_17"></td><td class="wk" data-key="1_05_18"></td><td class="wk" data-key="1_05_19"></td><td class="wk" data-key="1_05_20"></td><td class="wk m-end" data-key="1_05_21"></td><td class="wk" data-key="1_05_22"></td><td class="wk" data-key="1_05_23"></td><td class="wk" data-key="1_05_24"></td><td class="wk" data-key="1_05_25"></td><td class="wk m-end" data-key="1_05_26"></td><td class="wk" data-key="1_05_27"></td><td class="wk" data-key="1_05_28"></td><td class="wk" data-key="1_05_29"></td><td class="wk m-end" data-key="1_05_30"></td></tr><tr class="ag-row" data-pg="1"><td class="c-no">06</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-완료">완료</span></td><td class="wk" data-key="1_06_0"></td><td class="wk" data-key="1_06_1"></td><td class="wk" data-key="1_06_2"></td><td class="wk" data-key="1_06_3"></td><td class="wk m-end" data-key="1_06_4"></td><td class="wk" data-key="1_06_5"></td><td class="wk today-col" data-key="1_06_6"></td><td class="wk" data-key="1_06_7"></td><td class="wk m-end" data-key="1_06_8"></td><td class="wk" data-key="1_06_9"></td><td class="wk" data-key="1_06_10"></td><td class="wk" data-key="1_06_11"></td><td class="wk" data-key="1_06_12"></td><td class="wk m-end" data-key="1_06_13"></td><td class="wk" data-key="1_06_14"></td><td class="wk" data-key="1_06_15"></td><td class="wk" data-key="1_06_16"></td><td class="wk m-end" data-key="1_06_17"></td><td class="wk" data-key="1_06_18"></td><td class="wk" data-key="1_06_19"></td><td class="wk" data-key="1_06_20"></td><td class="wk m-end" data-key="1_06_21"></td><td class="wk" data-key="1_06_22"></td><td class="wk" data-key="1_06_23"></td><td class="wk" data-key="1_06_24"></td><td class="wk" data-key="1_06_25"></td><td class="wk m-end" data-key="1_06_26"></td><td class="wk" data-key="1_06_27"></td><td class="wk" data-key="1_06_28"></td><td class="wk" data-key="1_06_29"></td><td class="wk m-end" data-key="1_06_30"></td></tr><tr class="ag-row" data-pg="1"><td class="c-no">07</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-대기">대기</span></td><td class="wk" data-key="1_07_0"></td><td class="wk" data-key="1_07_1"></td><td class="wk" data-key="1_07_2"></td><td class="wk" data-key="1_07_3"></td><td class="wk m-end" data-key="1_07_4"></td><td class="wk" data-key="1_07_5"></td><td class="wk today-col" data-key="1_07_6"></td><td class="wk" data-key="1_07_7"></td><td class="wk m-end" data-key="1_07_8"></td><td class="wk" data-key="1_07_9"></td><td class="wk" data-key="1_07_10"></td><td class="wk" data-key="1_07_11"></td><td class="wk" data-key="1_07_12"></td><td class="wk m-end" data-key="1_07_13"></td><td class="wk" data-key="1_07_14"></td><td class="wk" data-key="1_07_15"></td><td class="wk" data-key="1_07_16"></td><td class="wk m-end" data-key="1_07_17"></td><td class="wk" data-key="1_07_18"></td><td class="wk" data-key="1_07_19"></td><td class="wk" data-key="1_07_20"></td><td class="wk m-end" data-key="1_07_21"></td><td class="wk" data-key="1_07_22"></td><td class="wk" data-key="1_07_23"></td><td class="wk" data-key="1_07_24"></td><td class="wk" data-key="1_07_25"></td><td class="wk m-end" data-key="1_07_26"></td><td class="wk" data-key="1_07_27"></td><td class="wk" data-key="1_07_28"></td><td class="wk" data-key="1_07_29"></td><td class="wk m-end" data-key="1_07_30"></td></tr><tr class="ag-row" data-pg="1"><td class="c-no">08</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-대기">대기</span></td><td class="wk" data-key="1_08_0"></td><td class="wk" data-key="1_08_1"></td><td class="wk" data-key="1_08_2"></td><td class="wk" data-key="1_08_3"></td><td class="wk m-end" data-key="1_08_4"></td><td class="wk" data-key="1_08_5"></td><td class="wk today-col" data-key="1_08_6"></td><td class="wk" data-key="1_08_7"></td><td class="wk m-end" data-key="1_08_8"></td><td class="wk" data-key="1_08_9"></td><td class="wk" data-key="1_08_10"></td><td class="wk" data-key="1_08_11"></td><td class="wk" data-key="1_08_12"></td><td class="wk m-end" data-key="1_08_13"></td><td class="wk" data-key="1_08_14"></td><td class="wk" data-key="1_08_15"></td><td class="wk" data-key="1_08_16"></td><td class="wk m-end" data-key="1_08_17"></td><td class="wk" data-key="1_08_18"></td><td class="wk" data-key="1_08_19"></td><td class="wk" data-key="1_08_20"></td><td class="wk m-end" data-key="1_08_21"></td><td class="wk" data-key="1_08_22"></td><td class="wk" data-key="1_08_23"></td><td class="wk" data-key="1_08_24"></td><td class="wk" data-key="1_08_25"></td><td class="wk m-end" data-key="1_08_26"></td><td class="wk" data-key="1_08_27"></td><td class="wk" data-key="1_08_28"></td><td class="wk" data-key="1_08_29"></td><td class="wk m-end" data-key="1_08_30"></td></tr><tr class="add-row" data-pg="1" data-add-for="1"><td colspan="35"><button class="add-btn">+ 항목 추가</button></td></tr><tr class="proj-row" data-proj-id="2"><td class="c-no"><button class="toggle-btn">▾</button></td><td class="c-item"><div class="proj-inner"><span class="proj-num">PROJECT 2 │</span><input class="proj-name-inp" placeholder="프로젝트명"></div></td><td class="c-owner"><button class="del-proj-btn" title="프로젝트 삭제">×</button></td><td class="c-status"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td></tr><tr class="sub-hdr" data-pg="2"><td class="c-no">No.</td><td class="c-item"><span>작업 항목</span></td><td class="c-owner">담당자</td><td class="c-status">상태</td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td></tr><tr class="ag-row" data-pg="2"><td class="c-no">01</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-진행중">진행중</span></td><td class="wk" data-key="2_01_0"></td><td class="wk" data-key="2_01_1"></td><td class="wk" data-key="2_01_2"></td><td class="wk" data-key="2_01_3"></td><td class="wk m-end" data-key="2_01_4"></td><td class="wk" data-key="2_01_5"></td><td class="wk today-col" data-key="2_01_6"></td><td class="wk" data-key="2_01_7"></td><td class="wk m-end" data-key="2_01_8"></td><td class="wk" data-key="2_01_9"></td><td class="wk" data-key="2_01_10"></td><td class="wk" data-key="2_01_11"></td><td class="wk" data-key="2_01_12"></td><td class="wk m-end" data-key="2_01_13"></td><td class="wk" data-key="2_01_14"></td><td class="wk" data-key="2_01_15"></td><td class="wk" data-key="2_01_16"></td><td class="wk m-end" data-key="2_01_17"></td><td class="wk" data-key="2_01_18"></td><td class="wk" data-key="2_01_19"></td><td class="wk" data-key="2_01_20"></td><td class="wk m-end" data-key="2_01_21"></td><td class="wk" data-key="2_01_22"></td><td class="wk" data-key="2_01_23"></td><td class="wk" data-key="2_01_24"></td><td class="wk" data-key="2_01_25"></td><td class="wk m-end" data-key="2_01_26"></td><td class="wk" data-key="2_01_27"></td><td class="wk" data-key="2_01_28"></td><td class="wk" data-key="2_01_29"></td><td class="wk m-end" data-key="2_01_30"></td></tr><tr class="ag-row" data-pg="2"><td class="c-no">02</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-완료">완료</span></td><td class="wk" data-key="2_02_0"></td><td class="wk" data-key="2_02_1"></td><td class="wk" data-key="2_02_2"></td><td class="wk" data-key="2_02_3"></td><td class="wk m-end" data-key="2_02_4"></td><td class="wk" data-key="2_02_5"></td><td class="wk today-col" data-key="2_02_6"></td><td class="wk" data-key="2_02_7"></td><td class="wk m-end" data-key="2_02_8"></td><td class="wk" data-key="2_02_9"></td><td class="wk" data-key="2_02_10"></td><td class="wk" data-key="2_02_11"></td><td class="wk" data-key="2_02_12"></td><td class="wk m-end" data-key="2_02_13"></td><td class="wk" data-key="2_02_14"></td><td class="wk" data-key="2_02_15"></td><td class="wk" data-key="2_02_16"></td><td class="wk m-end" data-key="2_02_17"></td><td class="wk" data-key="2_02_18"></td><td class="wk" data-key="2_02_19"></td><td class="wk" data-key="2_02_20"></td><td class="wk m-end" data-key="2_02_21"></td><td class="wk" data-key="2_02_22"></td><td class="wk" data-key="2_02_23"></td><td class="wk" data-key="2_02_24"></td><td class="wk" data-key="2_02_25"></td><td class="wk m-end" data-key="2_02_26"></td><td class="wk" data-key="2_02_27"></td><td class="wk" data-key="2_02_28"></td><td class="wk" data-key="2_02_29"></td><td class="wk m-end" data-key="2_02_30"></td></tr><tr class="ag-row" data-pg="2"><td class="c-no">03</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-대기">대기</span></td><td class="wk" data-key="2_03_0"></td><td class="wk" data-key="2_03_1"></td><td class="wk" data-key="2_03_2"></td><td class="wk" data-key="2_03_3"></td><td class="wk m-end" data-key="2_03_4"></td><td class="wk" data-key="2_03_5"></td><td class="wk today-col" data-key="2_03_6"></td><td class="wk" data-key="2_03_7"></td><td class="wk m-end" data-key="2_03_8"></td><td class="wk" data-key="2_03_9"></td><td class="wk" data-key="2_03_10"></td><td class="wk" data-key="2_03_11"></td><td class="wk" data-key="2_03_12"></td><td class="wk m-end" data-key="2_03_13"></td><td class="wk" data-key="2_03_14"></td><td class="wk" data-key="2_03_15"></td><td class="wk" data-key="2_03_16"></td><td class="wk m-end" data-key="2_03_17"></td><td class="wk" data-key="2_03_18"></td><td class="wk" data-key="2_03_19"></td><td class="wk" data-key="2_03_20"></td><td class="wk m-end" data-key="2_03_21"></td><td class="wk" data-key="2_03_22"></td><td class="wk" data-key="2_03_23"></td><td class="wk" data-key="2_03_24"></td><td class="wk" data-key="2_03_25"></td><td class="wk m-end" data-key="2_03_26"></td><td class="wk" data-key="2_03_27"></td><td class="wk" data-key="2_03_28"></td><td class="wk" data-key="2_03_29"></td><td class="wk m-end" data-key="2_03_30"></td></tr><tr class="ag-row" data-pg="2"><td class="c-no">04</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-대기">대기</span></td><td class="wk" data-key="2_04_0"></td><td class="wk" data-key="2_04_1"></td><td class="wk" data-key="2_04_2"></td><td class="wk" data-key="2_04_3"></td><td class="wk m-end" data-key="2_04_4"></td><td class="wk" data-key="2_04_5"></td><td class="wk today-col" data-key="2_04_6"></td><td class="wk" data-key="2_04_7"></td><td class="wk m-end" data-key="2_04_8"></td><td class="wk" data-key="2_04_9"></td><td class="wk" data-key="2_04_10"></td><td class="wk" data-key="2_04_11"></td><td class="wk" data-key="2_04_12"></td><td class="wk m-end" data-key="2_04_13"></td><td class="wk" data-key="2_04_14"></td><td class="wk" data-key="2_04_15"></td><td class="wk" data-key="2_04_16"></td><td class="wk m-end" data-key="2_04_17"></td><td class="wk" data-key="2_04_18"></td><td class="wk" data-key="2_04_19"></td><td class="wk" data-key="2_04_20"></td><td class="wk m-end" data-key="2_04_21"></td><td class="wk" data-key="2_04_22"></td><td class="wk" data-key="2_04_23"></td><td class="wk" data-key="2_04_24"></td><td class="wk" data-key="2_04_25"></td><td class="wk m-end" data-key="2_04_26"></td><td class="wk" data-key="2_04_27"></td><td class="wk" data-key="2_04_28"></td><td class="wk" data-key="2_04_29"></td><td class="wk m-end" data-key="2_04_30"></td></tr><tr class="ag-row" data-pg="2"><td class="c-no">05</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-대기">대기</span></td><td class="wk" data-key="2_05_0"></td><td class="wk" data-key="2_05_1"></td><td class="wk" data-key="2_05_2"></td><td class="wk" data-key="2_05_3"></td><td class="wk m-end" data-key="2_05_4"></td><td class="wk" data-key="2_05_5"></td><td class="wk today-col" data-key="2_05_6"></td><td class="wk" data-key="2_05_7"></td><td class="wk m-end" data-key="2_05_8"></td><td class="wk" data-key="2_05_9"></td><td class="wk" data-key="2_05_10"></td><td class="wk" data-key="2_05_11"></td><td class="wk" data-key="2_05_12"></td><td class="wk m-end" data-key="2_05_13"></td><td class="wk" data-key="2_05_14"></td><td class="wk" data-key="2_05_15"></td><td class="wk" data-key="2_05_16"></td><td class="wk m-end" data-key="2_05_17"></td><td class="wk" data-key="2_05_18"></td><td class="wk" data-key="2_05_19"></td><td class="wk" data-key="2_05_20"></td><td class="wk m-end" data-key="2_05_21"></td><td class="wk" data-key="2_05_22"></td><td class="wk" data-key="2_05_23"></td><td class="wk" data-key="2_05_24"></td><td class="wk" data-key="2_05_25"></td><td class="wk m-end" data-key="2_05_26"></td><td class="wk" data-key="2_05_27"></td><td class="wk" data-key="2_05_28"></td><td class="wk" data-key="2_05_29"></td><td class="wk m-end" data-key="2_05_30"></td></tr><tr class="ag-row" data-pg="2"><td class="c-no">06</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-대기">대기</span></td><td class="wk" data-key="2_06_0"></td><td class="wk" data-key="2_06_1"></td><td class="wk" data-key="2_06_2"></td><td class="wk" data-key="2_06_3"></td><td class="wk m-end" data-key="2_06_4"></td><td class="wk" data-key="2_06_5"></td><td class="wk today-col" data-key="2_06_6"></td><td class="wk" data-key="2_06_7"></td><td class="wk m-end" data-key="2_06_8"></td><td class="wk" data-key="2_06_9"></td><td class="wk" data-key="2_06_10"></td><td class="wk" data-key="2_06_11"></td><td class="wk" data-key="2_06_12"></td><td class="wk m-end" data-key="2_06_13"></td><td class="wk" data-key="2_06_14"></td><td class="wk" data-key="2_06_15"></td><td class="wk" data-key="2_06_16"></td><td class="wk m-end" data-key="2_06_17"></td><td class="wk" data-key="2_06_18"></td><td class="wk" data-key="2_06_19"></td><td class="wk" data-key="2_06_20"></td><td class="wk m-end" data-key="2_06_21"></td><td class="wk" data-key="2_06_22"></td><td class="wk" data-key="2_06_23"></td><td class="wk" data-key="2_06_24"></td><td class="wk" data-key="2_06_25"></td><td class="wk m-end" data-key="2_06_26"></td><td class="wk" data-key="2_06_27"></td><td class="wk" data-key="2_06_28"></td><td class="wk" data-key="2_06_29"></td><td class="wk m-end" data-key="2_06_30"></td></tr><tr class="ag-row" data-pg="2"><td class="c-no">07</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-대기">대기</span></td><td class="wk" data-key="2_07_0"></td><td class="wk" data-key="2_07_1"></td><td class="wk" data-key="2_07_2"></td><td class="wk" data-key="2_07_3"></td><td class="wk m-end" data-key="2_07_4"></td><td class="wk" data-key="2_07_5"></td><td class="wk today-col" data-key="2_07_6"></td><td class="wk" data-key="2_07_7"></td><td class="wk m-end" data-key="2_07_8"></td><td class="wk" data-key="2_07_9"></td><td class="wk" data-key="2_07_10"></td><td class="wk" data-key="2_07_11"></td><td class="wk" data-key="2_07_12"></td><td class="wk m-end" data-key="2_07_13"></td><td class="wk" data-key="2_07_14"></td><td class="wk" data-key="2_07_15"></td><td class="wk" data-key="2_07_16"></td><td class="wk m-end" data-key="2_07_17"></td><td class="wk" data-key="2_07_18"></td><td class="wk" data-key="2_07_19"></td><td class="wk" data-key="2_07_20"></td><td class="wk m-end" data-key="2_07_21"></td><td class="wk" data-key="2_07_22"></td><td class="wk" data-key="2_07_23"></td><td class="wk" data-key="2_07_24"></td><td class="wk" data-key="2_07_25"></td><td class="wk m-end" data-key="2_07_26"></td><td class="wk" data-key="2_07_27"></td><td class="wk" data-key="2_07_28"></td><td class="wk" data-key="2_07_29"></td><td class="wk m-end" data-key="2_07_30"></td></tr><tr class="ag-row" data-pg="2"><td class="c-no">08</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-대기">대기</span></td><td class="wk" data-key="2_08_0"></td><td class="wk" data-key="2_08_1"></td><td class="wk" data-key="2_08_2"></td><td class="wk" data-key="2_08_3"></td><td class="wk m-end" data-key="2_08_4"></td><td class="wk" data-key="2_08_5"></td><td class="wk today-col" data-key="2_08_6"></td><td class="wk" data-key="2_08_7"></td><td class="wk m-end" data-key="2_08_8"></td><td class="wk" data-key="2_08_9"></td><td class="wk" data-key="2_08_10"></td><td class="wk" data-key="2_08_11"></td><td class="wk" data-key="2_08_12"></td><td class="wk m-end" data-key="2_08_13"></td><td class="wk" data-key="2_08_14"></td><td class="wk" data-key="2_08_15"></td><td class="wk" data-key="2_08_16"></td><td class="wk m-end" data-key="2_08_17"></td><td class="wk" data-key="2_08_18"></td><td class="wk" data-key="2_08_19"></td><td class="wk" data-key="2_08_20"></td><td class="wk m-end" data-key="2_08_21"></td><td class="wk" data-key="2_08_22"></td><td class="wk" data-key="2_08_23"></td><td class="wk" data-key="2_08_24"></td><td class="wk" data-key="2_08_25"></td><td class="wk m-end" data-key="2_08_26"></td><td class="wk" data-key="2_08_27"></td><td class="wk" data-key="2_08_28"></td><td class="wk" data-key="2_08_29"></td><td class="wk m-end" data-key="2_08_30"></td></tr><tr class="add-row" data-pg="2" data-add-for="2"><td colspan="35"><button class="add-btn">+ 항목 추가</button></td></tr><tr class="proj-row" data-proj-id="3"><td class="c-no"><button class="toggle-btn">▾</button></td><td class="c-item"><div class="proj-inner"><span class="proj-num">PROJECT 3 │</span><input class="proj-name-inp" placeholder="프로젝트명"></div></td><td class="c-owner"><button class="del-proj-btn" title="프로젝트 삭제">×</button></td><td class="c-status"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td></tr><tr class="sub-hdr" data-pg="3"><td class="c-no">No.</td><td class="c-item"><span>작업 항목</span></td><td class="c-owner">담당자</td><td class="c-status">상태</td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td></tr><tr class="ag-row" data-pg="3"><td class="c-no">01</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="3_01_0"></td><td class="wk" data-key="3_01_1"></td><td class="wk" data-key="3_01_2"></td><td class="wk" data-key="3_01_3"></td><td class="wk m-end" data-key="3_01_4"></td><td class="wk" data-key="3_01_5"></td><td class="wk today-col" data-key="3_01_6"></td><td class="wk" data-key="3_01_7"></td><td class="wk m-end" data-key="3_01_8"></td><td class="wk" data-key="3_01_9"></td><td class="wk" data-key="3_01_10"></td><td class="wk" data-key="3_01_11"></td><td class="wk" data-key="3_01_12"></td><td class="wk m-end" data-key="3_01_13"></td><td class="wk" data-key="3_01_14"></td><td class="wk" data-key="3_01_15"></td><td class="wk" data-key="3_01_16"></td><td class="wk m-end" data-key="3_01_17"></td><td class="wk" data-key="3_01_18"></td><td class="wk" data-key="3_01_19"></td><td class="wk" data-key="3_01_20"></td><td class="wk m-end" data-key="3_01_21"></td><td class="wk" data-key="3_01_22"></td><td class="wk" data-key="3_01_23"></td><td class="wk" data-key="3_01_24"></td><td class="wk" data-key="3_01_25"></td><td class="wk m-end" data-key="3_01_26"></td><td class="wk" data-key="3_01_27"></td><td class="wk" data-key="3_01_28"></td><td class="wk" data-key="3_01_29"></td><td class="wk m-end" data-key="3_01_30"></td></tr><tr class="ag-row" data-pg="3"><td class="c-no">02</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="3_02_0"></td><td class="wk" data-key="3_02_1"></td><td class="wk" data-key="3_02_2"></td><td class="wk" data-key="3_02_3"></td><td class="wk m-end" data-key="3_02_4"></td><td class="wk" data-key="3_02_5"></td><td class="wk today-col" data-key="3_02_6"></td><td class="wk" data-key="3_02_7"></td><td class="wk m-end" data-key="3_02_8"></td><td class="wk" data-key="3_02_9"></td><td class="wk" data-key="3_02_10"></td><td class="wk" data-key="3_02_11"></td><td class="wk" data-key="3_02_12"></td><td class="wk m-end" data-key="3_02_13"></td><td class="wk" data-key="3_02_14"></td><td class="wk" data-key="3_02_15"></td><td class="wk" data-key="3_02_16"></td><td class="wk m-end" data-key="3_02_17"></td><td class="wk" data-key="3_02_18"></td><td class="wk" data-key="3_02_19"></td><td class="wk" data-key="3_02_20"></td><td class="wk m-end" data-key="3_02_21"></td><td class="wk" data-key="3_02_22"></td><td class="wk" data-key="3_02_23"></td><td class="wk" data-key="3_02_24"></td><td class="wk" data-key="3_02_25"></td><td class="wk m-end" data-key="3_02_26"></td><td class="wk" data-key="3_02_27"></td><td class="wk" data-key="3_02_28"></td><td class="wk" data-key="3_02_29"></td><td class="wk m-end" data-key="3_02_30"></td></tr><tr class="ag-row" data-pg="3"><td class="c-no">03</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="3_03_0"></td><td class="wk" data-key="3_03_1"></td><td class="wk" data-key="3_03_2"></td><td class="wk" data-key="3_03_3"></td><td class="wk m-end" data-key="3_03_4"></td><td class="wk" data-key="3_03_5"></td><td class="wk today-col" data-key="3_03_6"></td><td class="wk" data-key="3_03_7"></td><td class="wk m-end" data-key="3_03_8"></td><td class="wk" data-key="3_03_9"></td><td class="wk" data-key="3_03_10"></td><td class="wk" data-key="3_03_11"></td><td class="wk" data-key="3_03_12"></td><td class="wk m-end" data-key="3_03_13"></td><td class="wk" data-key="3_03_14"></td><td class="wk" data-key="3_03_15"></td><td class="wk" data-key="3_03_16"></td><td class="wk m-end" data-key="3_03_17"></td><td class="wk" data-key="3_03_18"></td><td class="wk" data-key="3_03_19"></td><td class="wk" data-key="3_03_20"></td><td class="wk m-end" data-key="3_03_21"></td><td class="wk" data-key="3_03_22"></td><td class="wk" data-key="3_03_23"></td><td class="wk" data-key="3_03_24"></td><td class="wk" data-key="3_03_25"></td><td class="wk m-end" data-key="3_03_26"></td><td class="wk" data-key="3_03_27"></td><td class="wk" data-key="3_03_28"></td><td class="wk" data-key="3_03_29"></td><td class="wk m-end" data-key="3_03_30"></td></tr><tr class="ag-row" data-pg="3"><td class="c-no">04</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="3_04_0"></td><td class="wk" data-key="3_04_1"></td><td class="wk" data-key="3_04_2"></td><td class="wk" data-key="3_04_3"></td><td class="wk m-end" data-key="3_04_4"></td><td class="wk" data-key="3_04_5"></td><td class="wk today-col" data-key="3_04_6"></td><td class="wk" data-key="3_04_7"></td><td class="wk m-end" data-key="3_04_8"></td><td class="wk" data-key="3_04_9"></td><td class="wk" data-key="3_04_10"></td><td class="wk" data-key="3_04_11"></td><td class="wk" data-key="3_04_12"></td><td class="wk m-end" data-key="3_04_13"></td><td class="wk" data-key="3_04_14"></td><td class="wk" data-key="3_04_15"></td><td class="wk" data-key="3_04_16"></td><td class="wk m-end" data-key="3_04_17"></td><td class="wk" data-key="3_04_18"></td><td class="wk" data-key="3_04_19"></td><td class="wk" data-key="3_04_20"></td><td class="wk m-end" data-key="3_04_21"></td><td class="wk" data-key="3_04_22"></td><td class="wk" data-key="3_04_23"></td><td class="wk" data-key="3_04_24"></td><td class="wk" data-key="3_04_25"></td><td class="wk m-end" data-key="3_04_26"></td><td class="wk" data-key="3_04_27"></td><td class="wk" data-key="3_04_28"></td><td class="wk" data-key="3_04_29"></td><td class="wk m-end" data-key="3_04_30"></td></tr><tr class="ag-row" data-pg="3"><td class="c-no">05</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="3_05_0"></td><td class="wk" data-key="3_05_1"></td><td class="wk" data-key="3_05_2"></td><td class="wk" data-key="3_05_3"></td><td class="wk m-end" data-key="3_05_4"></td><td class="wk" data-key="3_05_5"></td><td class="wk today-col" data-key="3_05_6"></td><td class="wk" data-key="3_05_7"></td><td class="wk m-end" data-key="3_05_8"></td><td class="wk" data-key="3_05_9"></td><td class="wk" data-key="3_05_10"></td><td class="wk" data-key="3_05_11"></td><td class="wk" data-key="3_05_12"></td><td class="wk m-end" data-key="3_05_13"></td><td class="wk" data-key="3_05_14"></td><td class="wk" data-key="3_05_15"></td><td class="wk" data-key="3_05_16"></td><td class="wk m-end" data-key="3_05_17"></td><td class="wk" data-key="3_05_18"></td><td class="wk" data-key="3_05_19"></td><td class="wk" data-key="3_05_20"></td><td class="wk m-end" data-key="3_05_21"></td><td class="wk" data-key="3_05_22"></td><td class="wk" data-key="3_05_23"></td><td class="wk" data-key="3_05_24"></td><td class="wk" data-key="3_05_25"></td><td class="wk m-end" data-key="3_05_26"></td><td class="wk" data-key="3_05_27"></td><td class="wk" data-key="3_05_28"></td><td class="wk" data-key="3_05_29"></td><td class="wk m-end" data-key="3_05_30"></td></tr><tr class="ag-row" data-pg="3"><td class="c-no">06</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="3_06_0"></td><td class="wk" data-key="3_06_1"></td><td class="wk" data-key="3_06_2"></td><td class="wk" data-key="3_06_3"></td><td class="wk m-end" data-key="3_06_4"></td><td class="wk" data-key="3_06_5"></td><td class="wk today-col" data-key="3_06_6"></td><td class="wk" data-key="3_06_7"></td><td class="wk m-end" data-key="3_06_8"></td><td class="wk" data-key="3_06_9"></td><td class="wk" data-key="3_06_10"></td><td class="wk" data-key="3_06_11"></td><td class="wk" data-key="3_06_12"></td><td class="wk m-end" data-key="3_06_13"></td><td class="wk" data-key="3_06_14"></td><td class="wk" data-key="3_06_15"></td><td class="wk" data-key="3_06_16"></td><td class="wk m-end" data-key="3_06_17"></td><td class="wk" data-key="3_06_18"></td><td class="wk" data-key="3_06_19"></td><td class="wk" data-key="3_06_20"></td><td class="wk m-end" data-key="3_06_21"></td><td class="wk" data-key="3_06_22"></td><td class="wk" data-key="3_06_23"></td><td class="wk" data-key="3_06_24"></td><td class="wk" data-key="3_06_25"></td><td class="wk m-end" data-key="3_06_26"></td><td class="wk" data-key="3_06_27"></td><td class="wk" data-key="3_06_28"></td><td class="wk" data-key="3_06_29"></td><td class="wk m-end" data-key="3_06_30"></td></tr><tr class="ag-row" data-pg="3"><td class="c-no">07</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="3_07_0"></td><td class="wk" data-key="3_07_1"></td><td class="wk" data-key="3_07_2"></td><td class="wk" data-key="3_07_3"></td><td class="wk m-end" data-key="3_07_4"></td><td class="wk" data-key="3_07_5"></td><td class="wk today-col" data-key="3_07_6"></td><td class="wk" data-key="3_07_7"></td><td class="wk m-end" data-key="3_07_8"></td><td class="wk" data-key="3_07_9"></td><td class="wk" data-key="3_07_10"></td><td class="wk" data-key="3_07_11"></td><td class="wk" data-key="3_07_12"></td><td class="wk m-end" data-key="3_07_13"></td><td class="wk" data-key="3_07_14"></td><td class="wk" data-key="3_07_15"></td><td class="wk" data-key="3_07_16"></td><td class="wk m-end" data-key="3_07_17"></td><td class="wk" data-key="3_07_18"></td><td class="wk" data-key="3_07_19"></td><td class="wk" data-key="3_07_20"></td><td class="wk m-end" data-key="3_07_21"></td><td class="wk" data-key="3_07_22"></td><td class="wk" data-key="3_07_23"></td><td class="wk" data-key="3_07_24"></td><td class="wk" data-key="3_07_25"></td><td class="wk m-end" data-key="3_07_26"></td><td class="wk" data-key="3_07_27"></td><td class="wk" data-key="3_07_28"></td><td class="wk" data-key="3_07_29"></td><td class="wk m-end" data-key="3_07_30"></td></tr><tr class="ag-row" data-pg="3"><td class="c-no">08</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="3_08_0"></td><td class="wk" data-key="3_08_1"></td><td class="wk" data-key="3_08_2"></td><td class="wk" data-key="3_08_3"></td><td class="wk m-end" data-key="3_08_4"></td><td class="wk" data-key="3_08_5"></td><td class="wk today-col" data-key="3_08_6"></td><td class="wk" data-key="3_08_7"></td><td class="wk m-end" data-key="3_08_8"></td><td class="wk" data-key="3_08_9"></td><td class="wk" data-key="3_08_10"></td><td class="wk" data-key="3_08_11"></td><td class="wk" data-key="3_08_12"></td><td class="wk m-end" data-key="3_08_13"></td><td class="wk" data-key="3_08_14"></td><td class="wk" data-key="3_08_15"></td><td class="wk" data-key="3_08_16"></td><td class="wk m-end" data-key="3_08_17"></td><td class="wk" data-key="3_08_18"></td><td class="wk" data-key="3_08_19"></td><td class="wk" data-key="3_08_20"></td><td class="wk m-end" data-key="3_08_21"></td><td class="wk" data-key="3_08_22"></td><td class="wk" data-key="3_08_23"></td><td class="wk" data-key="3_08_24"></td><td class="wk" data-key="3_08_25"></td><td class="wk m-end" data-key="3_08_26"></td><td class="wk" data-key="3_08_27"></td><td class="wk" data-key="3_08_28"></td><td class="wk" data-key="3_08_29"></td><td class="wk m-end" data-key="3_08_30"></td></tr><tr class="add-row" data-pg="3" data-add-for="3"><td colspan="35"><button class="add-btn">+ 항목 추가</button></td></tr><tr class="proj-row" data-proj-id="10"><td class="c-no"><button class="toggle-btn">▾</button></td><td class="c-item"><div class="proj-inner"><span class="proj-num">PROJECT 4 │</span><input class="proj-name-inp" placeholder="프로젝트명"></div></td><td class="c-owner"><button class="del-proj-btn" title="프로젝트 삭제">×</button></td><td class="c-status"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td><td class="m-end" style="background: rgba(255, 255, 255, 0.07); cursor: default;"></td></tr><tr class="sub-hdr" data-pg="10"><td class="c-no">No.</td><td class="c-item"><span>작업 항목</span></td><td class="c-owner">담당자</td><td class="c-status">상태</td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td><td></td><td></td><td></td><td style="border-right: 2px solid var(--stone);"></td></tr><tr class="ag-row" data-pg="10"><td class="c-no">01</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="10_01_0"></td><td class="wk" data-key="10_01_1"></td><td class="wk" data-key="10_01_2"></td><td class="wk" data-key="10_01_3"></td><td class="wk m-end" data-key="10_01_4"></td><td class="wk" data-key="10_01_5"></td><td class="wk today-col" data-key="10_01_6"></td><td class="wk" data-key="10_01_7"></td><td class="wk m-end" data-key="10_01_8"></td><td class="wk" data-key="10_01_9"></td><td class="wk" data-key="10_01_10"></td><td class="wk" data-key="10_01_11"></td><td class="wk" data-key="10_01_12"></td><td class="wk m-end" data-key="10_01_13"></td><td class="wk" data-key="10_01_14"></td><td class="wk" data-key="10_01_15"></td><td class="wk" data-key="10_01_16"></td><td class="wk m-end" data-key="10_01_17"></td><td class="wk" data-key="10_01_18"></td><td class="wk" data-key="10_01_19"></td><td class="wk" data-key="10_01_20"></td><td class="wk m-end" data-key="10_01_21"></td><td class="wk" data-key="10_01_22"></td><td class="wk" data-key="10_01_23"></td><td class="wk" data-key="10_01_24"></td><td class="wk" data-key="10_01_25"></td><td class="wk m-end" data-key="10_01_26"></td><td class="wk" data-key="10_01_27"></td><td class="wk" data-key="10_01_28"></td><td class="wk" data-key="10_01_29"></td><td class="wk m-end" data-key="10_01_30"></td></tr><tr class="ag-row" data-pg="10"><td class="c-no">02</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="10_02_0"></td><td class="wk" data-key="10_02_1"></td><td class="wk" data-key="10_02_2"></td><td class="wk" data-key="10_02_3"></td><td class="wk m-end" data-key="10_02_4"></td><td class="wk" data-key="10_02_5"></td><td class="wk today-col" data-key="10_02_6"></td><td class="wk" data-key="10_02_7"></td><td class="wk m-end" data-key="10_02_8"></td><td class="wk" data-key="10_02_9"></td><td class="wk" data-key="10_02_10"></td><td class="wk" data-key="10_02_11"></td><td class="wk" data-key="10_02_12"></td><td class="wk m-end" data-key="10_02_13"></td><td class="wk" data-key="10_02_14"></td><td class="wk" data-key="10_02_15"></td><td class="wk" data-key="10_02_16"></td><td class="wk m-end" data-key="10_02_17"></td><td class="wk" data-key="10_02_18"></td><td class="wk" data-key="10_02_19"></td><td class="wk" data-key="10_02_20"></td><td class="wk m-end" data-key="10_02_21"></td><td class="wk" data-key="10_02_22"></td><td class="wk" data-key="10_02_23"></td><td class="wk" data-key="10_02_24"></td><td class="wk" data-key="10_02_25"></td><td class="wk m-end" data-key="10_02_26"></td><td class="wk" data-key="10_02_27"></td><td class="wk" data-key="10_02_28"></td><td class="wk" data-key="10_02_29"></td><td class="wk m-end" data-key="10_02_30"></td></tr><tr class="ag-row" data-pg="10"><td class="c-no">03</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="10_03_0"></td><td class="wk" data-key="10_03_1"></td><td class="wk" data-key="10_03_2"></td><td class="wk" data-key="10_03_3"></td><td class="wk m-end" data-key="10_03_4"></td><td class="wk" data-key="10_03_5"></td><td class="wk today-col" data-key="10_03_6"></td><td class="wk" data-key="10_03_7"></td><td class="wk m-end" data-key="10_03_8"></td><td class="wk" data-key="10_03_9"></td><td class="wk" data-key="10_03_10"></td><td class="wk" data-key="10_03_11"></td><td class="wk" data-key="10_03_12"></td><td class="wk m-end" data-key="10_03_13"></td><td class="wk" data-key="10_03_14"></td><td class="wk" data-key="10_03_15"></td><td class="wk" data-key="10_03_16"></td><td class="wk m-end" data-key="10_03_17"></td><td class="wk" data-key="10_03_18"></td><td class="wk" data-key="10_03_19"></td><td class="wk" data-key="10_03_20"></td><td class="wk m-end" data-key="10_03_21"></td><td class="wk" data-key="10_03_22"></td><td class="wk" data-key="10_03_23"></td><td class="wk" data-key="10_03_24"></td><td class="wk" data-key="10_03_25"></td><td class="wk m-end" data-key="10_03_26"></td><td class="wk" data-key="10_03_27"></td><td class="wk" data-key="10_03_28"></td><td class="wk" data-key="10_03_29"></td><td class="wk m-end" data-key="10_03_30"></td></tr><tr class="ag-row" data-pg="10"><td class="c-no">04</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="10_04_0"></td><td class="wk" data-key="10_04_1"></td><td class="wk" data-key="10_04_2"></td><td class="wk" data-key="10_04_3"></td><td class="wk m-end" data-key="10_04_4"></td><td class="wk" data-key="10_04_5"></td><td class="wk today-col" data-key="10_04_6"></td><td class="wk" data-key="10_04_7"></td><td class="wk m-end" data-key="10_04_8"></td><td class="wk" data-key="10_04_9"></td><td class="wk" data-key="10_04_10"></td><td class="wk" data-key="10_04_11"></td><td class="wk" data-key="10_04_12"></td><td class="wk m-end" data-key="10_04_13"></td><td class="wk" data-key="10_04_14"></td><td class="wk" data-key="10_04_15"></td><td class="wk" data-key="10_04_16"></td><td class="wk m-end" data-key="10_04_17"></td><td class="wk" data-key="10_04_18"></td><td class="wk" data-key="10_04_19"></td><td class="wk" data-key="10_04_20"></td><td class="wk m-end" data-key="10_04_21"></td><td class="wk" data-key="10_04_22"></td><td class="wk" data-key="10_04_23"></td><td class="wk" data-key="10_04_24"></td><td class="wk" data-key="10_04_25"></td><td class="wk m-end" data-key="10_04_26"></td><td class="wk" data-key="10_04_27"></td><td class="wk" data-key="10_04_28"></td><td class="wk" data-key="10_04_29"></td><td class="wk m-end" data-key="10_04_30"></td></tr><tr class="ag-row" data-pg="10"><td class="c-no">05</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="10_05_0"></td><td class="wk" data-key="10_05_1"></td><td class="wk" data-key="10_05_2"></td><td class="wk" data-key="10_05_3"></td><td class="wk m-end" data-key="10_05_4"></td><td class="wk" data-key="10_05_5"></td><td class="wk today-col" data-key="10_05_6"></td><td class="wk" data-key="10_05_7"></td><td class="wk m-end" data-key="10_05_8"></td><td class="wk" data-key="10_05_9"></td><td class="wk" data-key="10_05_10"></td><td class="wk" data-key="10_05_11"></td><td class="wk" data-key="10_05_12"></td><td class="wk m-end" data-key="10_05_13"></td><td class="wk" data-key="10_05_14"></td><td class="wk" data-key="10_05_15"></td><td class="wk" data-key="10_05_16"></td><td class="wk m-end" data-key="10_05_17"></td><td class="wk" data-key="10_05_18"></td><td class="wk" data-key="10_05_19"></td><td class="wk" data-key="10_05_20"></td><td class="wk m-end" data-key="10_05_21"></td><td class="wk" data-key="10_05_22"></td><td class="wk" data-key="10_05_23"></td><td class="wk" data-key="10_05_24"></td><td class="wk" data-key="10_05_25"></td><td class="wk m-end" data-key="10_05_26"></td><td class="wk" data-key="10_05_27"></td><td class="wk" data-key="10_05_28"></td><td class="wk" data-key="10_05_29"></td><td class="wk m-end" data-key="10_05_30"></td></tr><tr class="ag-row" data-pg="10"><td class="c-no">06</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="10_06_0"></td><td class="wk" data-key="10_06_1"></td><td class="wk" data-key="10_06_2"></td><td class="wk" data-key="10_06_3"></td><td class="wk m-end" data-key="10_06_4"></td><td class="wk" data-key="10_06_5"></td><td class="wk today-col" data-key="10_06_6"></td><td class="wk" data-key="10_06_7"></td><td class="wk m-end" data-key="10_06_8"></td><td class="wk" data-key="10_06_9"></td><td class="wk" data-key="10_06_10"></td><td class="wk" data-key="10_06_11"></td><td class="wk" data-key="10_06_12"></td><td class="wk m-end" data-key="10_06_13"></td><td class="wk" data-key="10_06_14"></td><td class="wk" data-key="10_06_15"></td><td class="wk" data-key="10_06_16"></td><td class="wk m-end" data-key="10_06_17"></td><td class="wk" data-key="10_06_18"></td><td class="wk" data-key="10_06_19"></td><td class="wk" data-key="10_06_20"></td><td class="wk m-end" data-key="10_06_21"></td><td class="wk" data-key="10_06_22"></td><td class="wk" data-key="10_06_23"></td><td class="wk" data-key="10_06_24"></td><td class="wk" data-key="10_06_25"></td><td class="wk m-end" data-key="10_06_26"></td><td class="wk" data-key="10_06_27"></td><td class="wk" data-key="10_06_28"></td><td class="wk" data-key="10_06_29"></td><td class="wk m-end" data-key="10_06_30"></td></tr><tr class="ag-row" data-pg="10"><td class="c-no">07</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="10_07_0"></td><td class="wk" data-key="10_07_1"></td><td class="wk" data-key="10_07_2"></td><td class="wk" data-key="10_07_3"></td><td class="wk m-end" data-key="10_07_4"></td><td class="wk" data-key="10_07_5"></td><td class="wk today-col" data-key="10_07_6"></td><td class="wk" data-key="10_07_7"></td><td class="wk m-end" data-key="10_07_8"></td><td class="wk" data-key="10_07_9"></td><td class="wk" data-key="10_07_10"></td><td class="wk" data-key="10_07_11"></td><td class="wk" data-key="10_07_12"></td><td class="wk m-end" data-key="10_07_13"></td><td class="wk" data-key="10_07_14"></td><td class="wk" data-key="10_07_15"></td><td class="wk" data-key="10_07_16"></td><td class="wk m-end" data-key="10_07_17"></td><td class="wk" data-key="10_07_18"></td><td class="wk" data-key="10_07_19"></td><td class="wk" data-key="10_07_20"></td><td class="wk m-end" data-key="10_07_21"></td><td class="wk" data-key="10_07_22"></td><td class="wk" data-key="10_07_23"></td><td class="wk" data-key="10_07_24"></td><td class="wk" data-key="10_07_25"></td><td class="wk m-end" data-key="10_07_26"></td><td class="wk" data-key="10_07_27"></td><td class="wk" data-key="10_07_28"></td><td class="wk" data-key="10_07_29"></td><td class="wk m-end" data-key="10_07_30"></td></tr><tr class="ag-row" data-pg="10"><td class="c-no">08</td><td class="c-item"><div class="item-wrap"><input class="item-inp" placeholder="항목명 입력"></div></td><td class="c-owner"><input class="owner-inp" placeholder="-"></td><td class="c-status"><span class="badge b-empty">-</span></td><td class="wk" data-key="10_08_0"></td><td class="wk" data-key="10_08_1"></td><td class="wk" data-key="10_08_2"></td><td class="wk" data-key="10_08_3"></td><td class="wk m-end" data-key="10_08_4"></td><td class="wk" data-key="10_08_5"></td><td class="wk today-col" data-key="10_08_6"></td><td class="wk" data-key="10_08_7"></td><td class="wk m-end" data-key="10_08_8"></td><td class="wk" data-key="10_08_9"></td><td class="wk" data-key="10_08_10"></td><td class="wk" data-key="10_08_11"></td><td class="wk" data-key="10_08_12"></td><td class="wk m-end" data-key="10_08_13"></td><td class="wk" data-key="10_08_14"></td><td class="wk" data-key="10_08_15"></td><td class="wk" data-key="10_08_16"></td><td class="wk m-end" data-key="10_08_17"></td><td class="wk" data-key="10_08_18"></td><td class="wk" data-key="10_08_19"></td><td class="wk" data-key="10_08_20"></td><td class="wk m-end" data-key="10_08_21"></td><td class="wk" data-key="10_08_22"></td><td class="wk" data-key="10_08_23"></td><td class="wk" data-key="10_08_24"></td><td class="wk" data-key="10_08_25"></td><td class="wk m-end" data-key="10_08_26"></td><td class="wk" data-key="10_08_27"></td><td class="wk" data-key="10_08_28"></td><td class="wk" data-key="10_08_29"></td><td class="wk m-end" data-key="10_08_30"></td></tr><tr class="add-row" data-pg="10" data-add-for="10"><td colspan="35"><button class="add-btn">+ 항목 추가</button></td></tr></tbody>
+  </table>
+</div>
+
+<div id="status-popup">
+  <div class="s-opt" data-s="완료">완료</div>
+  <div class="s-opt" data-s="진행중">진행중</div>
+  <div class="s-opt" data-s="대기">대기</div>
+  <div class="s-opt" data-s="긴급">긴급</div>
+  <div class="s-opt" data-s="검토">검토</div>
+  <div class="s-opt" data-s="">—</div>
+</div>
+
+<div id="modal-bg" class="">
+  <div class="modal-box">
+    <h3>새 프로젝트 추가</h3>
+    <div class="modal-field">
+      <label>프로젝트명</label>
+      <input id="modal-name" type="text" placeholder="예: 해금서가 코티지차회">
+    </div>
+    <div class="modal-actions">
+      <button class="m-cancel" onclick="closeModal()">취소</button>
+      <button class="m-confirm" onclick="confirmModal()">추가</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════ CONFIG ════
+const API = 'https://script.google.com/macros/s/AKfycbxdOU7s4WvgouAdTeYpdR1E9PnyQbNVNlTYEF17TKgz4BnKnRzKVT2vuw-_jI9bF-d0/exec';
+
+// ════ DATA ════
+let MONTHS = [
+  {y:2026,m:3,weeks:5},{y:2026,m:4,weeks:4},{y:2026,m:5,weeks:5},
+  {y:2026,m:6,weeks:4},{y:2026,m:7,weeks:4},{y:2026,m:8,weeks:5},
+  {y:2026,m:9,weeks:4},
+];
+const mLabel = mo => `${mo.y}.${String(mo.m).padStart(2,'0')}`;
+const totalW = () => MONTHS.reduce((s,m)=>s+m.weeks,0);
+
+const now = new Date();
+const origin = new Date(2026,2,1);
+const currentWI = Math.max(0, Math.min(Math.floor((now-origin)/(7*86400000)), totalW()-1));
+
+// 기본 프로젝트 (시트에 데이터 없을 때 사용)
+const DEFAULT_PROJECTS = [
+  { id:1, num:'PROJECT 1', name:'해금서가 마음서랍', agendas:[
+    {no:'01',item:'기획회의(컨셉 확정)',owner:'모두',status:'완료'},
+    {no:'02',item:'차 메뉴 확정',owner:'지현',status:'완료'},
+    {no:'03',item:'차실림 셋팅',owner:'은진',status:'진행중'},
+    {no:'04',item:'처방 가이드 작성',owner:'-',status:'완료'},
+    {no:'05',item:'차우림법 가이드 작성',owner:'-',status:'진행중'},
+    {no:'06',item:'홍보용 브랜드+컨셉 소개 작성',owner:'-',status:'완료'},
+    {no:'07',item:'SNS 릴리즈(보리/개인 계정)',owner:'모두',status:'대기'},
+    {no:'08',item:'런칭',owner:'해금서가',status:'대기'},
+  ]},
+  { id:2, num:'PROJECT 2', name:'해금서가 코티지차회', agendas:[
+    {no:'01',item:'테마 설정',owner:'모두',status:'진행중'},
+    {no:'02',item:'리솔 협찬 협의',owner:'은진',status:'완료'},
+    {no:'03',item:'프로그램 구성',owner:'모두',status:'대기'},
+    {no:'04',item:'차실림 기물 셋팅',owner:'모두',status:'대기'},
+    {no:'05',item:'홍보용 자료 전달→해금서가',owner:'모두',status:'대기'},
+    {no:'06',item:'SNS 릴리즈(보리/개인 계정)',owner:'모두',status:'대기'},
+    {no:'07',item:'진행 및 정산',owner:'모두',status:'대기'},
+    {no:'08',item:'후기 수집→내부리뷰',owner:'-',status:'대기'},
+  ]},
+  { id:3, num:'PROJECT 3', name:'책과강연 컬쳐커뮤니티',
+    agendas: Array.from({length:8},(_,i)=>({no:String(i+1).padStart(2,'0'),item:'',owner:'',status:''}))
+  },
+];
+
+let projects = [];
+let ganttData = {};
+let nextId = 10, nextNum = 4;
+let selG = '진행중', dragging = false;
+
+// ════ API 통신 ════
+async function api(params) {
+  const url = API + '?' + new URLSearchParams(params).toString();
+  try {
+    const res = await fetch(url);
+    return await res.json();
+  } catch(e) {
+    console.error('API error', e);
+    return { ok: false };
+  }
+}
+
+// 저장 큐 (연속 드래그 중 너무 많은 요청 방지)
+let saveQueue = {};
+let saveTimer = null;
+function queueSave(params) {
+  const key = params.action + '_' + (params.key || params.projId + '_' + params.no || params.id);
+  saveQueue[key] = params;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushSave, 600);
+}
+async function flushSave() {
+  const batch = Object.values(saveQueue);
+  saveQueue = {};
+  for (const params of batch) {
+    await api(params);
+  }
+}
+
+// ════ LOAD FROM SHEETS ════
+async function loadFromSheets() {
+  showStatus('불러오는 중…');
+  const data = await api({ action: 'load' });
+
+  if (!data.ok || Object.keys(data.projects).length === 0) {
+    // 시트가 비어있으면 기본 데이터로 시작 후 저장
+    projects = DEFAULT_PROJECTS;
+    ganttData = {};
+    // 기본 프로젝트 시트에 저장
+    for (const p of projects) {
+      await api({ action:'saveProject', id:p.id, num:p.num, name:p.name });
+      for (const ag of p.agendas) {
+        await api({ action:'saveAgenda', projId:p.id, no:ag.no, item:ag.item, owner:ag.owner, status:ag.status });
+      }
+    }
+    hideStatus();
+    buildHeader();
+    buildBody();
+    return;
+  }
+
+  // 시트 데이터 → projects 배열 재구성
+  ganttData = data.gantt || {};
+
+  // 프로젝트 순서 복원 (id 숫자 순)
+  const projMap = data.projects;
+  const agMap = data.agendas;
+
+  projects = Object.values(projMap)
+    .sort((a,b) => Number(a.id) - Number(b.id))
+    .map(p => {
+      const agendas = Object.values(agMap)
+        .filter(ag => String(ag.projId) === String(p.id))
+        .sort((a,b) => a.no.localeCompare(b.no));
+      // 어젠다가 없으면 빈 8줄
+      if (agendas.length === 0) {
+        for (let i=1; i<=8; i++) agendas.push({no:String(i).padStart(2,'0'),item:'',owner:'',status:''});
+      }
+      return { id: Number(p.id), num: p.num, name: p.name, agendas };
+    });
+
+  // nextId/nextNum 업데이트
+  if (projects.length > 0) {
+    nextId = Math.max(...projects.map(p=>Number(p.id))) + 1;
+    nextNum = projects.length + 1;
+  }
+
+  hideStatus();
+  buildHeader();
+  buildBody();
+}
+
+// ════ STATUS INDICATOR ════
+function showStatus(msg) {
+  document.getElementById('sync-status').textContent = msg;
+  document.getElementById('sync-status').style.color = 'var(--text-light)';
+}
+function showSaved() {
+  document.getElementById('sync-status').textContent = '✓ 저장됨';
+  document.getElementById('sync-status').style.color = 'var(--sage-deep)';
+  setTimeout(()=>{ document.getElementById('sync-status').textContent = ''; }, 2000);
+}
+function hideStatus() {
+  document.getElementById('sync-status').textContent = '';
+}
+
+document.addEventListener('mouseup',()=>{ dragging=false; });
+
+document.querySelectorAll('.swatch').forEach(sw=>{
+  sw.addEventListener('click',()=>{
+    document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+    sw.classList.add('active'); selG=sw.dataset.g;
+  });
+});
+
+// ════ BUILD HEADER ════
+function buildHeader() {
+  const head = document.getElementById('tbl-head');
+  head.innerHTML = '';
+
+  const r1 = document.createElement('tr');
+  const mkLTH = (cls, text, align) => {
+    const th = document.createElement('th');
+    th.rowSpan = 2; th.className = cls; th.textContent = text;
+    if (align) th.style.textAlign = align;
+    return th;
+  };
+  r1.appendChild(mkLTH('c-no',     'No.',    'center'));
+  r1.appendChild(mkLTH('c-item',   '작업 항목', 'left'));
+  r1.appendChild(mkLTH('c-owner',  '담당자',  'center'));
+  r1.appendChild(mkLTH('c-status', '상태',   'center'));
+
+  MONTHS.forEach(mo => {
+    const th = document.createElement('th');
+    th.colSpan = mo.weeks; th.className = 'th-month';
+    th.textContent = mLabel(mo);
+    r1.appendChild(th);
+  });
+  head.appendChild(r1);
+
+  const r2 = document.createElement('tr');
+  r2.className = 'week-row';
+  let wi = 0;
+  MONTHS.forEach(mo => {
+    for (let w=0; w<mo.weeks; w++) {
+      const th = document.createElement('th');
+      th.textContent = `W${w+1}`;
+      if (wi===currentWI) th.classList.add('today-w');
+      if (w===mo.weeks-1) th.style.borderRight='2px solid rgba(255,255,255,.2)';
+      r2.appendChild(th); wi++;
+    }
+  });
+  head.appendChild(r2);
+}
+
+// ════ BUILD BODY ════
+function buildBody() {
+  const tbody = document.getElementById('tbl-body');
+  tbody.innerHTML = '';
+  projects.forEach(p => appendProject(p, tbody));
+}
+
+function appendProject(p, tbody) {
+  const pTr = document.createElement('tr');
+  pTr.className = 'proj-row'; pTr.dataset.projId = p.id;
+
+  const tdNo = document.createElement('td'); tdNo.className = 'c-no';
+  const tBtn = document.createElement('button');
+  tBtn.className = 'toggle-btn'; tBtn.textContent='▾';
+  tBtn.addEventListener('click',()=>toggleProj(p.id,tBtn));
+  tdNo.appendChild(tBtn); pTr.appendChild(tdNo);
+
+  const tdItem = document.createElement('td'); tdItem.className = 'c-item';
+  const inner = document.createElement('div'); inner.className = 'proj-inner';
+  const numSp = document.createElement('span'); numSp.className = 'proj-num'; numSp.textContent = p.num+' │';
+  const nameInp = document.createElement('input');
+  nameInp.className = 'proj-name-inp'; nameInp.value=p.name; nameInp.placeholder='프로젝트명';
+  nameInp.addEventListener('mousedown',e=>e.stopPropagation());
+  nameInp.addEventListener('change',()=>{
+    p.name=nameInp.value;
+    queueSave({ action:'saveProject', id:p.id, num:p.num, name:p.name });
+    showStatus('저장 중…');
+    setTimeout(showSaved, 800);
+  });
+  inner.appendChild(numSp); inner.appendChild(nameInp); tdItem.appendChild(inner); pTr.appendChild(tdItem);
+
+  const tdOwn = document.createElement('td'); tdOwn.className = 'c-owner';
+  const delBtn = document.createElement('button');
+  delBtn.className='del-proj-btn'; delBtn.textContent='×'; delBtn.title='프로젝트 삭제';
+  delBtn.addEventListener('click', async ()=>{
+    if(!confirm(`"${p.name}" 프로젝트를 삭제할까요?`)) return;
+    document.querySelectorAll(`[data-pg="${p.id}"]`).forEach(r=>r.remove());
+    pTr.remove(); projects=projects.filter(x=>x.id!==p.id);
+    showStatus('삭제 중…');
+    await api({ action:'deleteProject', id:p.id });
+    showSaved();
+  });
+  tdOwn.appendChild(delBtn); pTr.appendChild(tdOwn);
+
+  const tdSt = document.createElement('td'); tdSt.className = 'c-status'; pTr.appendChild(tdSt);
+
+  let wi=0;
+  MONTHS.forEach(mo=>{
+    for(let w=0;w<mo.weeks;w++){
+      const td=document.createElement('td');
+      td.style.background='rgba(255,255,255,0.07)'; td.style.cursor='default';
+      if(w===mo.weeks-1) td.classList.add('m-end');
+      pTr.appendChild(td); wi++;
+    }
+  });
+  tbody.appendChild(pTr);
+
+  const shTr = document.createElement('tr');
+  shTr.className='sub-hdr'; shTr.dataset.pg=p.id;
+  const mkSH=(cls,html)=>{ const td=document.createElement('td'); td.className=cls; td.innerHTML=html; return td; };
+  shTr.appendChild(mkSH('c-no','No.'));
+  shTr.appendChild(mkSH('c-item','<span>작업 항목</span>'));
+  shTr.appendChild(mkSH('c-owner','담당자'));
+  shTr.appendChild(mkSH('c-status','상태'));
+  wi=0;
+  MONTHS.forEach(mo=>{
+    for(let w=0;w<mo.weeks;w++){
+      const td=document.createElement('td');
+      if(w===mo.weeks-1) td.style.borderRight='2px solid var(--stone)';
+      shTr.appendChild(td); wi++;
+    }
+  });
+  tbody.appendChild(shTr);
+
+  p.agendas.forEach(ag=>appendAgenda(p,ag,tbody));
+
+  const addTr=document.createElement('tr');
+  addTr.className='add-row'; addTr.dataset.pg=p.id; addTr.dataset.addFor=p.id;
+  const addTd=document.createElement('td'); addTd.colSpan=4+totalW();
+  const addBtn=document.createElement('button');
+  addBtn.className='add-btn'; addBtn.textContent='+ 항목 추가';
+  addBtn.addEventListener('click',()=>addAgendaItem(p));
+  addTd.appendChild(addBtn); addTr.appendChild(addTd); tbody.appendChild(addTr);
+}
+
+function appendAgenda(p, ag, tbody) {
+  const addRow = tbody.querySelector(`[data-addFor="${p.id}"]`);
+  const tr = document.createElement('tr');
+  tr.className='ag-row'; tr.dataset.pg=p.id;
+
+  const tdNo=document.createElement('td'); tdNo.className='c-no'; tdNo.textContent=ag.no; tr.appendChild(tdNo);
+
+  const tdItem=document.createElement('td'); tdItem.className='c-item';
+  const wrap=document.createElement('div'); wrap.className='item-wrap';
+  const iInp=document.createElement('input'); iInp.className='item-inp'; iInp.value=ag.item; iInp.placeholder='항목명 입력';
+  iInp.addEventListener('mousedown',e=>e.stopPropagation());
+  iInp.addEventListener('change',()=>{
+    ag.item=iInp.value;
+    queueSave({ action:'saveAgenda', projId:p.id, no:ag.no, item:ag.item, owner:ag.owner, status:ag.status });
+    showStatus('저장 중…'); setTimeout(showSaved,800);
+  });
+  wrap.appendChild(iInp); tdItem.appendChild(wrap); tr.appendChild(tdItem);
+
+  const tdOwn=document.createElement('td'); tdOwn.className='c-owner';
+  const oInp=document.createElement('input'); oInp.className='owner-inp'; oInp.value=ag.owner; oInp.placeholder='-';
+  oInp.addEventListener('mousedown',e=>e.stopPropagation());
+  oInp.addEventListener('change',()=>{
+    ag.owner=oInp.value;
+    queueSave({ action:'saveAgenda', projId:p.id, no:ag.no, item:ag.item, owner:ag.owner, status:ag.status });
+    showStatus('저장 중…'); setTimeout(showSaved,800);
+  });
+  tdOwn.appendChild(oInp); tr.appendChild(tdOwn);
+
+  const tdSt=document.createElement('td'); tdSt.className='c-status';
+  const badge=makeBadge(ag.status);
+  badge.addEventListener('click',e=>openStatusPopup(e,badge,ag,p));
+  tdSt.appendChild(badge); tr.appendChild(tdSt);
+
+  let wi=0;
+  MONTHS.forEach(mo=>{
+    for(let w=0;w<mo.weeks;w++){
+      const key=`${p.id}_${ag.no}_${wi}`;
+      const td=document.createElement('td');
+      td.className='wk'; td.dataset.key=key;
+      if(w===mo.weeks-1) td.classList.add('m-end');
+      if(wi===currentWI) td.classList.add('today-col');
+      if(ganttData[key]) td.dataset.g=ganttData[key];
+      td.addEventListener('mousedown',e=>{ e.preventDefault(); dragging=true; applyG(td,key,e.button); });
+      td.addEventListener('mouseover',()=>{ if(dragging) applyG(td,key,null); });
+      td.addEventListener('contextmenu',e=>{ e.preventDefault(); applyG(td,key,2); });
+      tr.appendChild(td); wi++;
+    }
+  });
+  addRow ? tbody.insertBefore(tr,addRow) : tbody.appendChild(tr);
+}
+
+function applyG(td, key, btn) {
+  if (btn===2||selG==='clear') {
+    delete td.dataset.g;
+    delete ganttData[key];
+    queueSave({ action:'clearGantt', key });
+  } else {
+    td.dataset.g = selG;
+    ganttData[key] = selG;
+    queueSave({ action:'saveGantt', key, color:selG });
+  }
+  showStatus('저장 중…');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    await flushSave();
+    showSaved();
+  }, 600);
+}
+
+function makeBadge(s){
+  const b=document.createElement('span'); b.className='badge';
+  if(s){ b.textContent=s; b.classList.add(`b-${s}`); }
+  else { b.textContent='-'; b.classList.add('b-empty'); }
+  return b;
+}
+
+// ════ STATUS POPUP ════
+let popB=null, popAg=null, popP=null;
+function openStatusPopup(e,badge,ag,p){ e.stopPropagation(); popB=badge; popAg=ag; popP=p; const pop=document.getElementById('status-popup'); pop.classList.add('open'); pop.style.left=(e.clientX+4)+'px'; pop.style.top=(e.clientY+4)+'px'; }
+document.querySelectorAll('.s-opt').forEach(opt=>{
+  opt.addEventListener('click', async ()=>{
+    const s=opt.dataset.s;
+    if(popAg){ popAg.status=s; }
+    if(popB){ popB.className='badge'; if(s){ popB.textContent=s; popB.classList.add(`b-${s}`); } else { popB.textContent='-'; popB.classList.add('b-empty'); } }
+    document.getElementById('status-popup').classList.remove('open');
+    if(popAg && popP){
+      showStatus('저장 중…');
+      await api({ action:'saveAgenda', projId:popP.id, no:popAg.no, item:popAg.item, owner:popAg.owner, status:s });
+      showSaved();
+    }
+  });
+});
+document.addEventListener('click',()=>document.getElementById('status-popup').classList.remove('open'));
+
+// ════ COLLAPSE ════
+function toggleProj(id,btn){
+  const isC=btn.classList.contains('collapsed');
+  document.querySelectorAll(`[data-pg="${id}"]`).forEach(r=>{ isC?r.classList.remove('hidden'):r.classList.add('hidden'); });
+  btn.classList.toggle('collapsed');
+}
+
+// ════ ADD AGENDA ════
+async function addAgendaItem(p){
+  const no=String(p.agendas.length+1).padStart(2,'0');
+  const ag={no,item:'',owner:'',status:''};
+  p.agendas.push(ag);
+  appendAgenda(p,ag,document.getElementById('tbl-body'));
+  showStatus('저장 중…');
+  await api({ action:'saveAgenda', projId:p.id, no:ag.no, item:'', owner:'', status:'' });
+  showSaved();
+}
+
+// ════ ADD PROJECT ════
+function openModal(){ document.getElementById('modal-bg').classList.add('open'); setTimeout(()=>document.getElementById('modal-name').focus(),50); }
+function closeModal(){ document.getElementById('modal-bg').classList.remove('open'); document.getElementById('modal-name').value=''; }
+async function confirmModal(){
+  const name=document.getElementById('modal-name').value.trim();
+  if(!name){ document.getElementById('modal-name').focus(); return; }
+  const p={ id:nextId++, num:`PROJECT ${nextNum++}`, name, agendas:Array.from({length:8},(_,i)=>({no:String(i+1).padStart(2,'0'),item:'',owner:'',status:''})) };
+  projects.push(p);
+  appendProject(p,document.getElementById('tbl-body'));
+  closeModal();
+  showStatus('저장 중…');
+  await api({ action:'saveProject', id:p.id, num:p.num, name:p.name });
+  for (const ag of p.agendas) {
+    await api({ action:'saveAgenda', projId:p.id, no:ag.no, item:'', owner:'', status:'' });
+  }
+  showSaved();
+}
+document.getElementById('modal-name').addEventListener('keydown',e=>{ if(e.key==='Enter') confirmModal(); if(e.key==='Escape') closeModal(); });
+document.getElementById('modal-bg').addEventListener('click',e=>{ if(e.target===document.getElementById('modal-bg')) closeModal(); });
+
+// ════ ADD MONTH ════
+function addMonth(){
+  const last=MONTHS[MONTHS.length-1];
+  const nm=last.m===12?1:last.m+1, ny=last.m===12?last.y+1:last.y;
+  MONTHS.push({y:ny,m:nm,weeks:4}); buildHeader(); buildBody();
+}
+
+// ════ INIT ════
+loadFromSheets();
+</script>
+
+
+</body></html>

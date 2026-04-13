@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0051)file:///C:/Users/dream/Downloads/borih-gantt_3.html -->
+<!-- saved from url=(0051)file:///C:/Users/dream/Downloads/borih-gantt_5.html -->
 <html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -243,7 +243,7 @@ tr.hidden { display: none; }
   <span class="brand">BORIH</span>
   <span class="chart-title">프로젝트 관리 차트</span>
   <span class="year">2026</span>
-  <span id="sync-status" style="margin-left: auto; font-size: 10px; letter-spacing: 0.1em; transition: color 0.3s; color: var(--sage-deep);"></span>
+  <span id="sync-status" style="margin-left: auto; font-size: 10px; letter-spacing: 0.1em; transition: color 0.3s; color: var(--sage-light);"></span>
   <button onclick="loadFromSheets()" style="margin-left:12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:4px 10px;border-radius:3px;font-size:9px;letter-spacing:0.12em;cursor:pointer;font-family:&#39;Poppins&#39;,sans-serif;">↻ 새로고침</button>
 </div>
 
@@ -348,16 +348,40 @@ let ganttData = {};
 let nextId = 10, nextNum = 4;
 let selG = '진행중', dragging = false;
 
-// ════ API 통신 ════
-async function api(params) {
-  const url = API + '?' + new URLSearchParams(params).toString();
-  try {
-    const res = await fetch(url);
-    return await res.json();
-  } catch(e) {
-    console.error('API error', e);
-    return { ok: false };
-  }
+// ════ API 통신 (JSONP — CORS 우회) ════
+let _cbCount = 0;
+function api(params) {
+  return new Promise((resolve) => {
+    const cbName = '_gjsonp' + (++_cbCount);
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      const tag = document.getElementById(cbName);
+      if (tag) tag.remove();
+      console.warn('API timeout', params);
+      resolve({ ok: false });
+    }, 15000);
+
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      const tag = document.getElementById(cbName);
+      if (tag) tag.remove();
+      resolve(data);
+    };
+
+    const p = { ...params, callback: cbName };
+    const url = API + '?' + new URLSearchParams(p).toString();
+    const script = document.createElement('script');
+    script.id = cbName;
+    script.src = url;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      resolve({ ok: false });
+    };
+    document.head.appendChild(script);
+  });
 }
 
 // 저장 큐 (연속 드래그 중 너무 많은 요청 방지)
